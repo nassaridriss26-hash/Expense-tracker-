@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>إدارة المصروفات · Expense Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F6F2E9; --surface:#FFFFFF; --ink:#20293A; --muted:#7C7461;
+  --accent:#B9862F; --accent-ink:#5A420F; --positive:#2F6F63; --danger:#A6403B;
+  --border:#E3DBC8; --track:#EDE6D4;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#181C22; --surface:#20262F; --ink:#EDE7D8; --muted:#9A917C;
+    --accent:#D8A64A; --accent-ink:#F3D68B; --border:#333B47; --track:#2A303A;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#181C22; --surface:#20262F; --ink:#EDE7D8; --muted:#9A917C;
+  --accent:#D8A64A; --accent-ink:#F3D68B; --border:#333B47; --track:#2A303A;
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Cairo',system-ui,sans-serif;line-height:1.5}
+.wrap{max-width:900px;margin:0 auto;padding:28px 20px 60px}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+h1{font-size:26px;font-weight:800;margin:0 0 4px}
+.sub{color:var(--muted);font-size:14px;margin:0}
+button{font-family:inherit;cursor:pointer}
+.lang-btn{background:var(--surface);border:1px solid var(--border);color:var(--ink);
+  padding:9px 16px;border-radius:8px;font-size:14px;font-weight:600}
+.lang-btn:hover{border-color:var(--accent)}
+nav{display:flex;gap:8px;margin-bottom:22px;border-bottom:1px solid var(--border);padding-bottom:0;flex-wrap:wrap}
+.tab{background:none;border:none;color:var(--muted);font-size:15px;font-weight:600;
+  padding:10px 4px;margin-inline-end:20px;border-bottom:2px solid transparent;position:relative;top:1px}
+.tab.active{color:var(--ink);border-bottom-color:var(--accent)}
+.panel{display:none}
+.panel.active{display:block}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:16px}
+.card h2{font-size:15px;font-weight:700;margin:0 0 14px;color:var(--muted)}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px}
+.kpi .num{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+.kpi .lbl{font-size:13px;color:var(--muted);margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:9px 8px;text-align:start;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums}
+th{color:var(--muted);font-weight:600;font-size:12.5px}
+tr:last-child td{border-bottom:none}
+.bar-row{display:flex;align-items:center;gap:10px;padding:7px 0}
+.bar-label{width:100px;flex:0 0 100px;font-size:13.5px}
+.bar-track{flex:1;height:9px;background:var(--track);border-radius:5px;overflow:hidden}
+.bar-fill{height:100%;background:var(--accent);border-radius:5px}
+.bar-pct{width:44px;flex:0 0 44px;text-align:end;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:5px;font-weight:600}
+input,select{width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:7px;
+  background:var(--bg);color:var(--ink);font-family:inherit;font-size:14px}
+input:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px}
+.btn-primary{background:var(--accent);color:#fff;border:none;padding:10px 20px;border-radius:7px;
+  font-weight:700;font-size:14px;margin-top:14px}
+.btn-primary:hover{opacity:.9}
+.del-btn{background:none;border:1px solid var(--border);color:var(--danger);
+  padding:4px 10px;border-radius:6px;font-size:12px}
+.del-btn:hover{border-color:var(--danger)}
+.empty{color:var(--muted);font-size:14px;padding:14px 0;text-align:center}
+.year-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:14px}
+.year-row select{width:auto}
+.status{display:inline-block;padding:5px 14px;border-radius:20px;font-weight:700;font-size:13px}
+.status.ok{background:#2F6F631a;color:var(--positive)}
+.status.warn{background:#B9862F1a;color:var(--accent-ink)}
+.status.danger{background:#A6403B1a;color:var(--danger)}
+.status.none{background:var(--track);color:var(--muted)}
+.progress-track{height:14px;background:var(--track);border-radius:8px;overflow:hidden;margin:10px 0}
+.progress-fill{height:100%;border-radius:8px;background:var(--positive)}
+.progress-fill.warn{background:var(--accent)}
+.progress-fill.danger{background:var(--danger)}
+.hi{color:var(--danger);font-weight:700}
+.help{font-size:12.5px;color:var(--muted);margin-top:6px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:640px){.two-col{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1 data-i18n="appTitle">إدارة المصروفات</h1>
+      <p class="sub" data-i18n="appSub">تابع مصروفاتك وميزانيتك الشهرية أولًا بأول</p>
+    </div>
+    <button class="lang-btn" id="langBtn" onclick="toggleLang()">English</button>
+  </header>
+
+  <nav>
+    <button class="tab active" data-tab="dash" onclick="showTab('dash')" data-i18n="tabDash">لوحة المتابعة</button>
+    <button class="tab" data-tab="exp" onclick="showTab('exp')" data-i18n="tabExp">المصروفات</button>
+    <button class="tab" data-tab="budget" onclick="showTab('budget')" data-i18n="tabBudget">الميزانية</button>
+  </nav>
+
+  <!-- DASHBOARD -->
+  <section class="panel active" id="panel-dash">
+    <div class="kpi-grid" id="kpiGrid"></div>
+
+    <div class="card">
+      <h2 data-i18n="statsTitle">الإحصائيات التفصيلية</h2>
+      <table id="statsTable"></table>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <h2 data-i18n="byCategory">المصروفات حسب الفئة</h2>
+        <div id="catBars"></div>
+      </div>
+      <div class="card">
+        <h2 data-i18n="catTableTitle">تفاصيل الفئات</h2>
+        <table id="catTable"></table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="year-row">
+        <span data-i18n="yearShown">السنة المعروضة:</span>
+        <select id="yearSelect" onchange="setYear(this.value)"></select>
+      </div>
+      <h2 data-i18n="byMonth">المصروفات حسب الشهر</h2>
+      <table id="monthTable"></table>
+    </div>
+  </section>
+
+  <!-- EXPENSES -->
+  <section class="panel" id="panel-exp">
+    <div class="card">
+      <h2 data-i18n="addExpense">إضافة مصروف جديد</h2>
+      <div class="form-grid">
+        <div>
+          <label data-i18n="fDate">التاريخ</label>
+          <input type="date" id="fDate">
+        </div>
+        <div>
+          <label data-i18n="fDesc">وصف المصروف</label>
+          <input type="text" id="fDesc">
+        </div>
+        <div>
+          <label data-i18n="fCat">الفئة</label>
+          <select id="fCat"></select>
+        </div>
+        <div>
+          <label data-i18n="fAmount">المبلغ ($)</label>
+          <input type="number" id="fAmount" step="0.01" min="0">
+        </div>
+        <div>
+          <label data-i18n="fMethod">طريقة الدفع</label>
+          <select id="fMethod"></select>
+        </div>
+        <div>
+          <label data-i18n="fNotes">ملاحظات</label>
+          <input type="text" id="fNotes">
+        </div>
+      </div>
+      <button class="btn-primary" onclick="addExpense()" data-i18n="addBtn">إضافة</button>
+    </div>
+
+    <div class="card">
+      <h2 data-i18n="expList">سجل المصروفات</h2>
+      <table id="expTable"></table>
+      <div class="empty" id="expEmpty" style="display:none" data-i18n="expEmptyTxt">لا توجد مصروفات مسجّلة بعد</div>
+    </div>
+  </section>
+
+  <!-- BUDGET -->
+  <section class="panel" id="panel-budget">
+    <div class="card">
+      <h2 data-i18n="budgetInput">الإدخال</h2>
+      <div class="form-grid">
+        <div>
+          <label data-i18n="budgetMonthly">الميزانية الشهرية</label>
+          <input type="number" id="bMonthly" step="0.01" min="0" onchange="saveBudget()">
+        </div>
+        <div>
+          <label data-i18n="budgetHigh">حد المبلغ المرتفع (اختياري)</label>
+          <input type="number" id="bHigh" step="0.01" min="0" onchange="saveBudget()">
+          <div class="help" data-i18n="budgetHighHelp">اتركه فارغًا لاستخدام الحد التلقائي: ضعف متوسط المصروف</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 data-i18n="budgetResults">النتائج (الشهر الحالي)</h2>
+      <table id="budgetTable"></table>
+      <div class="progress-track"><div class="progress-fill" id="budgetFill" style="width:0%"></div></div>
+      <div id="budgetStatus"></div>
+    </div>
+
+    <div class="card">
+      <h2 data-i18n="notesTitle">طريقة الاستخدام وملاحظات</h2>
+      <ul id="usageNotes" style="margin:0;padding-inline-start:20px;font-size:13.5px;color:var(--muted);line-height:1.8"></ul>
+    </div>
+  </section>
+</div>
+
+<script>
+const CATS = ['food','transport','bills','shopping','entertainment','education','health','other'];
+const METHODS = ['cash','credit','debit','transfer','ewallet'];
+const T = {
+  ar:{ appTitle:'إدارة المصروفات', appSub:'تابع مصروفاتك وميزانيتك الشهرية أولًا بأول',
+    tabDash:'لوحة المتابعة', tabExp:'المصروفات', tabBudget:'الميزانية',
+    kTotal:'إجمالي المصروفات', kMonth:'مصروفات هذا الشهر', kAvg:'متوسط المصروف اليومي', kTop:'أعلى فئة إنفاقًا',
+    statsTitle:'الإحصائيات التفصيلية', sTotal:'إجمالي المصروفات', sToday:'إجمالي مصروفات اليوم',
+    sMonth:'إجمالي مصروفات الشهر', sAvg:'متوسط المصروف اليومي', sHigh:'أعلى مصروف', sHighDesc:'وصف أعلى مصروف',
+    sCount:'عدد العمليات',
+    byCategory:'المصروفات حسب الفئة', catTableTitle:'تفاصيل الفئات',
+    cCat:'الفئة', cTotal:'الإجمالي ($)', cPct:'النسبة من الإجمالي', cCount:'عدد العمليات', cAvgOp:'متوسط العملية ($)', cHighest:'أعلى مصروف ($)',
+    yearShown:'السنة المعروضة:', byMonth:'المصروفات حسب الشهر',
+    mMonth:'الشهر', mTotal:'الإجمالي ($)', mCount:'عدد العمليات', mPct:'النسبة من السنة', mAvg:'متوسط العملية ($)', mChange:'التغيّر عن الشهر السابق',
+    addExpense:'إضافة مصروف جديد', fDate:'التاريخ', fDesc:'وصف المصروف', fCat:'الفئة', fAmount:'المبلغ ($)',
+    fMethod:'طريقة الدفع', fNotes:'ملاحظات', addBtn:'إضافة',
+    expList:'سجل المصروفات', expEmptyTxt:'لا توجد مصروفات مسجّلة بعد', delBtn:'حذف',
+    eDate:'التاريخ', eDesc:'الوصف', eCat:'الفئة', eAmount:'المبلغ ($)', eMethod:'طريقة الدفع', eNotes:'ملاحظات', eAction:'',
+    budgetInput:'الإدخال', budgetMonthly:'الميزانية الشهرية', budgetHigh:'حد المبلغ المرتفع (اختياري)',
+    budgetHighHelp:'اتركه فارغًا لاستخدام الحد التلقائي: ضعف متوسط المصروف',
+    budgetResults:'النتائج (الشهر الحالي)', bMonth:'الشهر الحالي', bTotal:'إجمالي المصروف', bRemain:'المبلغ المتبقي',
+    bPct:'نسبة الميزانية المستخدمة',
+    statNone:'أدخل الميزانية', statOk:'ضمن الميزانية', statWarn:'اقتراب من حد الميزانية', statDanger:'تجاوزت الميزانية',
+    notesTitle:'طريقة الاستخدام وملاحظات',
+    note1:'أضف كل مصروف من تبويب «المصروفات». الحسابات والجداول تُحدَّث تلقائيًا.',
+    note2:'متوسط المصروف اليومي = إجمالي المصروفات ÷ عدد الأيام بين أول وآخر تاريخ مسجّل (تشمل الأيام بلا إنفاق).',
+    note3:'إن لم تحدد حدًا للمبلغ المرتفع، فالحد التلقائي هو ضعف متوسط المصروف لكل عملية.',
+    note4:'الشهر الحالي يُحدَّد من تاريخ اليوم، فتنتقل الميزانية للشهر التالي تلقائيًا.',
+    none:'—', catNames:{food:'طعام',transport:'مواصلات',bills:'فواتير',shopping:'تسوق',entertainment:'ترفيه',education:'تعليم',health:'صحة',other:'أخرى'},
+    methodNames:{cash:'نقدًا',credit:'بطاقة ائتمان',debit:'بطاقة مدين',transfer:'تحويل بنكي',ewallet:'محفظة إلكترونية'},
+    months:['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'] },
+  en:{ appTitle:'Expense Manager', appSub:'Track your spending and monthly budget as you go',
+    tabDash:'Dashboard', tabExp:'Expenses', tabBudget:'Budget',
+    kTotal:'Total expenses', kMonth:'This month', kAvg:'Average daily expense', kTop:'Top spending category',
+    statsTitle:'Detailed statistics', sTotal:'Total expenses', sToday:'Total spent today',
+    sMonth:'Total spent this month', sAvg:'Average daily expense', sHigh:'Highest expense', sHighDesc:'Highest expense description',
+    sCount:'Number of transactions',
+    byCategory:'Expenses by category', catTableTitle:'Category breakdown',
+    cCat:'Category', cTotal:'Total ($)', cPct:'% of total', cCount:'Transactions', cAvgOp:'Avg. per transaction ($)', cHighest:'Highest ($)',
+    yearShown:'Year shown:', byMonth:'Expenses by month',
+    mMonth:'Month', mTotal:'Total ($)', mCount:'Transactions', mPct:'% of year', mAvg:'Avg. per transaction ($)', mChange:'Change vs. previous month',
+    addExpense:'Add a new expense', fDate:'Date', fDesc:'Description', fCat:'Category', fAmount:'Amount ($)',
+    fMethod:'Payment method', fNotes:'Notes', addBtn:'Add',
+    expList:'Expense log', expEmptyTxt:'No expenses recorded yet', delBtn:'Delete',
+    eDate:'Date', eDesc:'Description', eCat:'Category', eAmount:'Amount ($)', eMethod:'Method', eNotes:'Notes', eAction:'',
+    budgetInput:'Input', budgetMonthly:'Monthly budget', budgetHigh:'High-amount threshold (optional)',
+    budgetHighHelp:'Leave blank to use the automatic default: twice the average expense',
+    budgetResults:'Results (current month)', bMonth:'Current month', bTotal:'Total spent', bRemain:'Remaining amount',
+    bPct:'% of budget used',
+    statNone:'Enter a budget', statOk:'Within budget', statWarn:'Approaching budget limit', statDanger:'Over budget',
+    notesTitle:'How to use / notes',
+    note1:'Add each expense from the Expenses tab. Tables and totals update automatically.',
+    note2:'Average daily expense = total expenses ÷ number of days between the first and last recorded date (including days with no spending).',
+    note3:'If no high-amount threshold is set, the automatic default is twice the average expense per transaction.',
+    note4:'The current month is based on today\u2019s date, so the budget rolls over automatically.',
+    none:'—', catNames:{food:'Food',transport:'Transportation',bills:'Bills',shopping:'Shopping',entertainment:'Entertainment',education:'Education',health:'Health',other:'Other'},
+    methodNames:{cash:'Cash',credit:'Credit card',debit:'Debit card',transfer:'Bank transfer',ewallet:'E-wallet'},
+    months:['January','February','March','April','May','June','July','August','September','October','November','December'] }
+};
+let lang = localStorage.getItem('exp_lang_v1') || 'ar';
+let expenses = [], budget = {monthly:'', high:''}, selYear = new Date().getFullYear();
+try{ expenses = JSON.parse(localStorage.getItem('exp_data_v1')) || []; }catch(e){ expenses = []; }
+try{ budget = JSON.parse(localStorage.getItem('exp_budget_v1')) || {monthly:'',high:''}; }catch(e){}
+
+function t(k){ return T[lang][k]; }
+function fmt(n){ return (Math.round((n+Number.EPSILON)*100)/100).toLocaleString(lang==='ar'?'ar-EG':'en-US'); }
+function pct(n){ return fmt(n)+'%'; }
+
+function toggleLang(){
+  lang = lang==='ar' ? 'en' : 'ar';
+  localStorage.setItem('exp_lang_v1', lang);
+  applyLang();
+}
+function applyLang(){
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang==='ar' ? 'rtl' : 'ltr';
+  document.getElementById('langBtn').textContent = lang==='ar' ? 'English' : 'العربية';
+  document.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent = t(el.getAttribute('data-i18n')); });
+  fillSelect('fCat', CATS, T[lang].catNames);
+  fillSelect('fMethod', METHODS, T[lang].methodNames);
+  renderAll();
+}
+function fillSelect(id, keys, names){
+  const sel = document.getElementById(id), prev = sel.value;
+  sel.innerHTML = keys.map(k=>`<option value="${k}">${names[k]}</option>`).join('');
+  if(keys.includes(prev)) sel.value = prev;
+}
+function showTab(name){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active', p.id==='panel-'+name));
+}
+function saveExpenses(){ localStorage.setItem('exp_data_v1', JSON.stringify(expenses)); }
+function saveBudget(){
+  budget.monthly = document.getElementById('bMonthly').value;
+  budget.high = document.getElementById('bHigh').value;
+  localStorage.setItem('exp_budget_v1', JSON.stringify(budget));
+  renderAll();
+}
+function addExpense(){
+  const date = document.getElementById('fDate').value;
+  const desc = document.getElementById('fDesc').value.trim();
+  const cat = document.getElementById('fCat').value;
+  const amount = parseFloat(document.getElementById('fAmount').value);
+  const method = document.getElementById('fMethod').value;
+  const notes = document.getElementById('fNotes').value.trim();
+  if(!date || !desc || isNaN(amount) || amount<0){ return; }
+  expenses.push({id:Date.now()+Math.random(), date, desc, cat, amount, method, notes});
+  saveExpenses();
+  document.getElementById('fDate').value='';
+  document.getElementById('fDesc').value='';
+  document.getElementById('fAmount').value='';
+  document.getElementById('fNotes').value='';
+  renderAll();
+}
+function deleteExpense(id){
+  expenses = expenses.filter(e=>e.id!==id);
+  saveExpenses();
+  renderAll();
+}
+function setYear(y){ selYear = parseInt(y); renderAll(); }
+function daysBetween(a,b){ return Math.round((b-a)/86400000); }
+
+function computeStats(){
+  const total = expenses.reduce((s,e)=>s+e.amount,0);
+  const count = expenses.length;
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0,10);
+  const todayTotal = expenses.filter(e=>e.date===todayStr).reduce((s,e)=>s+e.amount,0);
+  const monthTotal = expenses.filter(e=>{
+    const d = new Date(e.date+'T00:00:00');
+    return d.getFullYear()===now.getFullYear() && d.getMonth()===now.getMonth();
+  }).reduce((s,e)=>s+e.amount,0);
+  let avgDaily = 0;
+  if(count){
+    const dates = expenses.map(e=>new Date(e.date+'T00:00:00').getTime());
+    const span = daysBetween(Math.min(...dates), Math.max(...dates))+1;
+    avgDaily = total/span;
+  }
+  let highest = 0, highestDesc = t('none');
+  expenses.forEach(e=>{ if(e.amount>highest){ highest=e.amount; highestDesc=e.desc; } });
+  const catStats = CATS.map(c=>{
+    const items = expenses.filter(e=>e.cat===c);
+    const ctotal = items.reduce((s,e)=>s+e.amount,0);
+    const chigh = items.reduce((m,e)=>Math.max(m,e.amount),0);
+    return { cat:c, total:ctotal, count:items.length,
+      avg: items.length? ctotal/items.length : 0,
+      high: chigh, pct: total? ctotal/total*100 : 0 };
+  });
+  let topCat = null;
+  catStats.forEach(c=>{ if(c.total>0 && (!topCat || c.total>topCat.total)) topCat = c; });
+  return {total,count,todayTotal,monthTotal,avgDaily,highest,highestDesc,catStats,topCat};
+}
+function computeMonthly(year){
+  const months = [];
+  for(let m=0;m<12;m++){
+    const items = expenses.filter(e=>{
+      const d = new Date(e.date+'T00:00:00');
+      return d.getFullYear()===year && d.getMonth()===m;
+    });
+    const total = items.reduce((s,e)=>s+e.amount,0);
+    months.push({m, total, count:items.length, avg: items.length? total/items.length : 0});
+  }
+  const yearTotal = months.reduce((s,x)=>s+x.total,0);
+  months.forEach((mo,i)=>{
+    mo.pct = yearTotal? mo.total/yearTotal*100 : 0;
+    mo.change = (i>0 && months[i-1].total>0) ? (mo.total-months[i-1].total)/months[i-1].total*100 : null;
+  });
+  return {months, yearTotal};
+}
+function renderAll(){
+  const s = computeStats();
+  const kpis = [
+    [fmt(s.total), t('kTotal')],
+    [fmt(s.monthTotal), t('kMonth')],
+    [fmt(s.avgDaily), t('kAvg')],
+    [s.topCat ? t('catNames')[s.topCat.cat] : t('none'), t('kTop')]
+  ];
+  document.getElementById('kpiGrid').innerHTML = kpis.map(([n,l])=>
+    `<div class="kpi"><div class="num">${n}</div><div class="lbl">${l}</div></div>`).join('');
+
+  document.getElementById('statsTable').innerHTML = [
+    [t('sTotal'), fmt(s.total)], [t('sToday'), fmt(s.todayTotal)], [t('sMonth'), fmt(s.monthTotal)],
+    [t('sAvg'), fmt(s.avgDaily)], [t('sHigh'), fmt(s.highest)], [t('sHighDesc'), s.highest? s.highestDesc : t('none')],
+    [t('sCount'), s.count]
+  ].map(([l,v])=>`<tr><td>${l}</td><td style="font-weight:700">${v}</td></tr>`).join('');
+
+  document.getElementById('catBars').innerHTML = s.catStats.map(c=>
+    `<div class="bar-row"><div class="bar-label">${t('catNames')[c.cat]}</div>
+     <div class="bar-track"><div class="bar-fill" style="width:${Math.min(c.pct,100)}%"></div></div>
+     <div class="bar-pct">${Math.round(c.pct)}%</div></div>`).join('');
+
+  document.getElementById('catTable').innerHTML =
+    `<tr><th>${t('cCat')}</th><th>${t('cTotal')}</th><th>${t('cPct')}</th><th>${t('cCount')}</th><th>${t('cAvgOp')}</th><th>${t('cHighest')}</th></tr>` +
+    s.catStats.map(c=>`<tr><td>${t('catNames')[c.cat]}</td><td>${fmt(c.total)}</td><td>${fmt(c.pct)}%</td><td>${c.count}</td><td>${fmt(c.avg)}</td><td>${fmt(c.high)}</td></tr>`).join('') +
+    `<tr style="font-weight:700"><td>${lang==='ar'?'الإجمالي':'Total'}</td><td>${fmt(s.total)}</td><td>100%</td><td>${s.count}</td><td>${fmt(s.count?s.total/s.count:0)}</td><td>${fmt(s.catStats.reduce((m,c)=>Math.max(m,c.high),0))}</td></tr>`;
+
+  const yearSel = document.getElementById('yearSelect');
+  const years = new Set(expenses.map(e=>new Date(e.date+'T00:00:00').getFullYear()));
+  years.add(new Date().getFullYear()); years.add(selYear);
+  const sortedYears = Array.from(years).sort();
+  yearSel.innerHTML = sortedYears.map(y=>`<option value="${y}" ${y===selYear?'selected':''}>${y}</option>`).join('');
+
+  const mo = computeMonthly(selYear);
+  document.getElementById('monthTable').innerHTML =
+    `<tr><th>${t('mMonth')}</th><th>${t('mTotal')}</th><th>${t('mCount')}</th><th>${t('mPct')}</th><th>${t('mAvg')}</th><th>${t('mChange')}</th></tr>` +
+    mo.months.map(m=>`<tr><td>${t('months')[m.m]}</td><td>${fmt(m.total)}</td><td>${m.count}</td><td>${fmt(m.pct)}%</td><td>${fmt(m.avg)}</td><td>${m.change===null?t('none'):(m.change>=0?'+':'')+fmt(m.change)+'%'}</td></tr>`).join('') +
+    `<tr style="font-weight:700"><td>${lang==='ar'?'الإجمالي':'Total'}</td><td>${fmt(mo.yearTotal)}</td><td>${mo.months.reduce((s,m)=>s+m.count,0)}</td><td>100%</td><td>${fmt(mo.months.reduce((s,m)=>s+m.count,0)?mo.yearTotal/mo.months.reduce((s,m)=>s+m.count,0):0)}</td><td>${t('none')}</td></tr>`;
+
+  // expenses table
+  const sorted = [...expenses].sort((a,b)=>b.date.localeCompare(a.date));
+  const avgPerTx = s.count ? s.total/s.count : 0;
+  const threshold = parseFloat(budget.high) || (avgPerTx*2) || Infinity;
+  document.getElementById('expTable').innerHTML = sorted.length ?
+    `<tr><th>${t('eDate')}</th><th>${t('eDesc')}</th><th>${t('eCat')}</th><th>${t('eAmount')}</th><th>${t('eMethod')}</th><th>${t('eNotes')}</th><th></th></tr>` +
+    sorted.map(e=>`<tr><td>${e.date}</td><td>${e.desc}</td><td>${t('catNames')[e.cat]}</td>
+      <td class="${e.amount>threshold?'hi':''}">${fmt(e.amount)}</td><td>${t('methodNames')[e.method]}</td><td>${e.notes||''}</td>
+      <td><button class="del-btn" onclick="deleteExpense(${e.id})">${t('delBtn')}</button></td></tr>`).join('')
+    : '';
+  document.getElementById('expEmpty').style.display = sorted.length ? 'none' : 'block';
+
+  // budget
+  document.getElementById('bMonthly').value = budget.monthly || '';
+  document.getElementById('bHigh').value = budget.high || '';
+  const monthlyNum = parseFloat(budget.monthly);
+  const hasBudget = !isNaN(monthlyNum) && monthlyNum>0;
+  const remain = hasBudget ? monthlyNum - s.monthTotal : null;
+  const usedPct = hasBudget ? (s.monthTotal/monthlyNum*100) : 0;
+  document.getElementById('budgetTable').innerHTML = [
+    [t('bMonth'), new Date().toISOString().slice(0,10)],
+    [t('bTotal'), fmt(s.monthTotal)],
+    [t('bRemain'), hasBudget ? `<span style="${remain<0?'color:var(--danger);font-weight:700':''}">${fmt(remain)}</span>` : t('none')],
+    [t('bPct'), hasBudget ? fmt(usedPct)+'%' : t('none')]
+  ].map(([l,v])=>`<tr><td>${l}</td><td style="font-weight:700">${v}</td></tr>`).join('');
+  const fill = document.getElementById('budgetFill');
+  fill.style.width = Math.min(usedPct,100)+'%';
+  fill.className = 'progress-fill' + (usedPct>=100?' danger':usedPct>=80?' warn':'');
+  let statusClass='none', statusText=t('statNone');
+  if(hasBudget){
+    if(usedPct>=100){ statusClass='danger'; statusText=t('statDanger'); }
+    else if(usedPct>=80){ statusClass='warn'; statusText=t('statWarn'); }
+    else { statusClass='ok'; statusText=t('statOk'); }
+  }
+  document.getElementById('budgetStatus').innerHTML = `<span class="status ${statusClass}">${statusText}</span>`;
+
+  document.getElementById('usageNotes').innerHTML =
+    ['note1','note2','note3','note4'].map(k=>`<li>${t(k)}</li>`).join('');
+}
+
+document.getElementById('fDate').value = new Date().toISOString().slice(0,10);
+applyLang();
+</script>
+</body>
+</html>
